@@ -1,14 +1,18 @@
 package com.file_share.config;
 
 import io.jsonwebtoken.*;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import java.util.Date;
 
 @Component
 public class JwtUtil {
-    private final String SECRET = "MY_SECRET_KEY";
-    private final long EXPIRATION = 1000 * 60 * 60 * 10; // 10 hours
+
+    @Value("${jwt.secret}")
+    private String SECRET;
+
+    private final long EXPIRATION = 1000 * 60 * 60; // 1 hour
 
     public String generateToken(String email) {
         return Jwts.builder()

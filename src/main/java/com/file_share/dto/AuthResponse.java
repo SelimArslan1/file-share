@@ -6,7 +6,7 @@ public class AuthResponse {
 
 
     public AuthResponse() {}
-    public AuthResponse(String email, String jwt, String apiKey) {
+    public AuthResponse(String email, String jwt) {
         this.email = email;
         this.jwt = jwt;
     }
