@@ -24,6 +24,8 @@ public class User {
     @Column(nullable = false)
     private LocalDateTime createdAt;
 
+    public User() {}
+
     public User(String username, String email, String password) {
         this.username = username;
         this.email = email;
