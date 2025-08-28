@@ -1,12 +1,21 @@
 package com.file_share.service;
 
 import com.file_share.dto.FileUploadResponse;
+import com.file_share.entity.Download;
 import com.file_share.entity.FileEntity;
 import com.file_share.entity.User;
+import com.file_share.repository.DownloadRepository;
 import com.file_share.repository.FileEntityRepository;
 import com.file_share.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.io.Resource;
+import org.springframework.core.io.UrlResource;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
@@ -22,10 +31,12 @@ public class FileService {
 
     private final FileEntityRepository fileRepository;
     private final UserRepository userRepository;
+    private final DownloadRepository downloadRepository;
 
-    public FileService(UserRepository userRepository, FileEntityRepository fileRepository) {
+    public FileService(UserRepository userRepository, FileEntityRepository fileRepository, DownloadRepository downloadRepository) {
         this.fileRepository = fileRepository;
         this.userRepository = userRepository;
+        this.downloadRepository = downloadRepository;
     }
 
     @Value("${file.upload-dir}")
@@ -60,5 +71,45 @@ public class FileService {
             throw new RuntimeException("Failed to store file", e);
         }
     }
+
+    @GetMapping("/download/{downloadToken}")
+    public ResponseEntity<Resource> download(@PathVariable String downloadToken, UUID downloaderId) {
+        // Find file entity by downloadToken
+        FileEntity fileEntity = fileRepository.findByDownloadToken(downloadToken)
+                .orElseThrow(() -> new RuntimeException("Invalid or expired token"));
+
+        // Check expiration
+        if (fileEntity.getExpirationTime().isBefore(LocalDateTime.now())) {
+            throw new RuntimeException("Download link expired");
+        }
+
+        // Build file path
+        Path path = Paths.get(uploadDir, fileEntity.getStoredFileName());
+
+        try {
+            Resource resource = new UrlResource(path.toUri());
+
+            if (!resource.exists()) {
+                throw new RuntimeException("File not found");
+            }
+
+            User user = userRepository.findById(downloaderId).orElseThrow();
+
+            // Log downloads
+            Download download = new Download(fileEntity, user);
+            downloadRepository.save(download);
+
+
+            return ResponseEntity.ok()
+                    .header(HttpHeaders.CONTENT_DISPOSITION,
+                            "attachment; filename=\"" + fileEntity.getOriginalFileName() + "\"")
+                    .contentType(MediaType.APPLICATION_OCTET_STREAM)
+                    .body(resource);
+
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to download file", e);
+        }
+    }
+
 
 }

@@ -6,6 +6,7 @@ import com.file_share.dto.FileUploadResponse;
 import com.file_share.repository.UserRepository;
 import com.file_share.service.FileService;
 import io.jsonwebtoken.JwtException;
+import org.springframework.core.io.Resource;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -57,8 +58,29 @@ public class FileController {
         }
     }
 
-    @GetMapping("download/{downloadToken}")
-    public void download(@PathVariable String downloadToken) {
+    @GetMapping("/download/{downloadToken}")
+    public ResponseEntity<Resource> download(@PathVariable String downloadToken,
+                                             @RequestHeader("Authorization") String jwtHeader) {
+        String token = jwtHeader.replace("Bearer ", "");
 
+        try {
+            String email = jwtUtil.extractEmail(token);
+
+            if (jwtUtil.isTokenExpired(token)) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+            }
+
+            if (userRepository.findByEmail(email).isEmpty()) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+            }
+
+            UUID downloaderId = userRepository.findByEmail(email).orElseThrow().getId();
+
+            return fileService.download(downloadToken, downloaderId);
+
+        } catch (JwtException e) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
     }
+
 }
