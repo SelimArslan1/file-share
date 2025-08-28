@@ -38,7 +38,7 @@ public class AuthService {
         User user = new User(request.getUsername(), request.getEmail(), hashed);
         userRepository.save(user);
 
-        String jwt = jwtUtil.generateToken(user.getEmail());
+        String jwt = jwtUtil.generateToken(user.getEmail(), user.getRole());
         return new AuthResponse(user.getEmail(), jwt);
     }
 
@@ -50,7 +50,7 @@ public class AuthService {
             throw new RuntimeException("Invalid credentials");
         }
 
-        String jwt = jwtUtil.generateToken(user.getEmail());
+        String jwt = jwtUtil.generateToken(user.getEmail(), user.getRole());
         return new AuthResponse(user.getEmail(), jwt);
     }
 }
