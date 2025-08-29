@@ -72,8 +72,7 @@ public class FileService {
         }
     }
 
-    @GetMapping("/download/{downloadToken}")
-    public ResponseEntity<Resource> download(@PathVariable String downloadToken, UUID downloaderId) {
+    public ResponseEntity<Resource> download(String downloadToken, UUID downloaderId) {
         // Find file entity by downloadToken
         FileEntity fileEntity = fileRepository.findByDownloadToken(downloadToken)
                 .orElseThrow(() -> new RuntimeException("Invalid or expired token"));
@@ -111,5 +110,22 @@ public class FileService {
         }
     }
 
+    public void deleteFile(String downloadToken) {
+
+        FileEntity fileToDelete = fileRepository.findByDownloadToken(downloadToken)
+                .orElseThrow(() -> new RuntimeException("File not found with token: " + downloadToken));
+
+        Path path = Paths.get(uploadDir, fileToDelete.getStoredFileName());
+
+        try {
+            Files.deleteIfExists(path);
+        } catch (IOException e) {
+            throw new RuntimeException("Failed to delete the file.");
+        }
+
+        // Set as deleted
+        fileToDelete.setDeleted(true);
+        fileRepository.save(fileToDelete);
+    }
 
 }

@@ -48,7 +48,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             var user = userRepository.findByEmail(email)
                     .orElseThrow(() -> new JwtException("User not found"));
 
-            String role = user.getRole(); // Use DB role instead of JWT, optional
+            String role = user.getRole();
             var authorities = List.of(new SimpleGrantedAuthority("ROLE_" + role));
 
             var auth = new UsernamePasswordAuthenticationToken(email, null, authorities);

@@ -30,12 +30,16 @@ public class FileEntity {
     @Column(nullable = false, unique = true)
     private String downloadToken;
 
+    @Column(nullable = false)
+    private boolean deleted;
+
     @ManyToOne
     @JoinColumn(name = "uploader_id", nullable = false)
     private User uploader;
 
     public FileEntity() {
         this.uploadTime = LocalDateTime.now();
+        this.deleted = false;
     }
 
     // Getters and Setters
@@ -62,4 +66,12 @@ public class FileEntity {
 
     public User getUploader() { return uploader; }
     public void setUploader(User uploader) { this.uploader = uploader; }
+
+    public boolean isDeleted() {
+        return deleted;
+    }
+
+    public void setDeleted(boolean deleted) {
+        this.deleted = deleted;
+    }
 }
